@@ -2,13 +2,18 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-
 public class PlayerControl : MonoBehaviour {
     public Transform SpawnPoint;
     public Transform SpawnPoint2;
     public GameObject Goal;
+    public GameObject OpenDoor;
+    public Sprite OpenDoorSprite;
     public GameObject Win;
     public GameObject RestartButton;
+
+    public Sprite NormalFace;
+    public Sprite HurtFace;
+    public Sprite LoveFace;
     
     private float StringMaxLength;
     private float StringIdleLength = 2.0f;
@@ -72,28 +77,45 @@ public class PlayerControl : MonoBehaviour {
         }
     }
 
+    private IEnumerator BackToNormalFace()
+    {
+        yield return new WaitForSeconds(0.1f);
+        transform.GetComponent<SpriteRenderer>().sprite = NormalFace;
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if(collision.transform.tag == "Holder")
+        {
+            print("collide something else");
+            transform.GetComponent<SpriteRenderer>().sprite = HurtFace;
+            StartCoroutine(BackToNormalFace());
+        }
+    }
+
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if(collision.tag == "KillWall")
         {
             transform.GetComponent<Rigidbody2D>().velocity = Vector2.zero;
-            transform.GetComponent<Rigidbody2D>().angularVelocity = 0f;
-            transform.rotation = Quaternion.identity;
+            transform.GetComponent<Rigidbody2D>().angularVelocity = 0f; 
             Time.timeScale = 0f;
             isDraging = false;
             hasSavedPrincess = false;
 
+            transform.GetComponent<SpriteRenderer>().sprite = HurtFace;
+            StartCoroutine(BackToNormalFace());
             RestartButton.gameObject.SetActive(true);
-        }
-        if(collision.tag == "Princess" && !hasSavedPrincess)
+        }else if(collision.tag == "Princess" && !hasSavedPrincess)
         {
+            transform.GetComponent<SpriteRenderer>().sprite = LoveFace;
             hasSavedPrincess = true;
             collision.gameObject.GetComponent<PolygonCollider2D>().enabled = false;
             collision.gameObject.transform.parent = this.transform;
             print("saved princess");
             Goal.SetActive(true);
-        }
-        if (collision.tag == "Goal" && hasSavedPrincess)
+            OpenDoor.GetComponent<SpriteRenderer>().sprite = OpenDoorSprite;
+        }else if (collision.tag == "Goal" && hasSavedPrincess)
         {
             Win.SetActive(true);
             Time.timeScale = 0f;
@@ -136,7 +158,6 @@ public class PlayerControl : MonoBehaviour {
             else
             {
                 // Render the line then dismiss the line.
-
                 if (!lineRenderer.enabled)
                 {
                     lineRenderer.enabled = true;
@@ -172,6 +193,7 @@ public class PlayerControl : MonoBehaviour {
     public void Reset()
     {
         transform.position = SpawnPoint.position;
+        transform.rotation = Quaternion.identity;
         hasSavedPrincess = false;
         Time.timeScale = 1f;
     }
